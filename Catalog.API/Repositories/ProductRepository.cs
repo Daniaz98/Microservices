@@ -15,22 +15,26 @@ public class ProductRepository : IProductRepository
 
     public async Task<IEnumerable<Product>> GetProducts()
     {
-        throw new NotImplementedException();
+        return await _context.Products.Find(p => true).ToListAsync();
     }
 
     public async Task<Product> GetProductById(string id)
     {
-        throw new NotImplementedException();
+        return await _context.Products.Find(p => p.Id == id).FirstOrDefaultAsync();
     }
 
-    public async Task<IEnumerable<Product>> GetProductsByCategory(string category)
+    public async Task<IEnumerable<Product>> GetProductsByCategory(string categoryName)
     {
-        throw new NotImplementedException();
+        FilterDefinition<Product> filter = Builders<Product>.Filter.Eq(p => p.Category, categoryName);
+        
+        return await _context.Products.Find(filter).ToListAsync();
     }
 
     public async Task<IEnumerable<Product>> GetProductByName(string name)
     {
-        throw new NotImplementedException();
+        FilterDefinition<Product> filter = Builders<Product>.Filter.ElemMatch(p => p.Name, name);
+
+        return await _context.Products.Find(filter).ToListAsync();
     }
 
     public async Task CreateProduct(Product product)
@@ -40,16 +44,9 @@ public class ProductRepository : IProductRepository
 
     public async Task<bool> UpdateProduct(Product product)
     {
-        FilterDefinition<Product> filter = Builders<Product>.Filter.Eq(p => p.Id, product.Id);
-        var update = Builders<Product>.Update
-            .Set(product => product.Name, product.Name)
-            .Set(product => product.Description, product.Description)
-            .Set(product => product.Price, product.Price)
-            .Set(product => product.Category, product.Category);
+        var resultUpdate = await _context.Products.ReplaceOneAsync(filter: g => g.Id == product.Id, replacement: product);
         
-        var updateResult = await _context.Products.UpdateOneAsync(filter, update);
-
-        return updateResult.IsAcknowledged;
+        return resultUpdate.IsAcknowledged && resultUpdate.ModifiedCount > 0;
     }
 
     public async Task<bool> DeleteProduct(string id)
